@@ -1,0 +1,29 @@
+{
+  "name": "iot-hub-ingestion-processor",
+  "version": "0.1.0",
+  "description": "ingestion processes Kafka messages",
+  "main": "index.js",
+  "engines" : { 
+    "node" : ">=8.3.0"
+  },
+  "scripts": {
+    "debug": "node --inspect index.js",
+    "start": "node index.js",
+    "test": "mocha"
+  },
+  "keywords": [
+    "iot",
+    "hub",
+    "ingestion",
+    "processing"
+  ],
+  "author": "Travel Devel",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.5.0",
+    "kafka-node": "^2.2.2",
+    "node-zookeeper-client": "^0.2.2",
+    "chai": "^4.1.1",
+    "mocha": "^3.5.0"
+  }
+}
