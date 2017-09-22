@@ -159,7 +159,7 @@ function onMessage(message) {
                 // Get the raw data collection collection 
                 var rawDataCol = db.collection(tenantName + "_raw_data");
                 
-                // Insert some documents 
+                // Insert raw data record
                 rawDataCol.insertOne(rawData, function(err, result) {
         
                     if(err){
