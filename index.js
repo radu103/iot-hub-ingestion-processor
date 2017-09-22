@@ -124,7 +124,7 @@ function onMessage(message) {
         var dId = new ObjectId(msg.device_id);
 
         var deviceColName = tenantName + "_device";
-        console.log('deviceColName : ', deviceColName);
+        //console.log('deviceColName : ', deviceColName);
 
         var deviceCol = db.collection(deviceColName);     
 
@@ -152,7 +152,7 @@ function onMessage(message) {
                     'group_id' : group_id,
                     'device_id' : msg.device_id,
                     'values' : msg.values,
-                    'recorded_time' : Date.parse(msg.receive_time),
+                    'recorded_time' : new Date(msg.receive_time),
                     'created_at' : new Date()
                 };
         
@@ -160,15 +160,24 @@ function onMessage(message) {
                 var rawDataCol = db.collection(tenantName + "_raw_data");
                 
                 // Insert raw data record
-                rawDataCol.insertOne(rawData, function(err, result) {
-        
+                rawDataCol.insertOne(rawData, function(err, raw_data) {
+                    
+                    //console.log(raw_data);
+
                     if(err){
                         console.log('Mongo err : ', err);
                     }
         
-                    console.log(result);
-        
                     db.close();
+
+                    // process and insert location from raw_data if latitude & longitude are present
+                    // TO DO
+
+                    // process and generate events & validate schema if specified
+                    // TO DO
+
+                    // process and transfer to cold store
+                    // TO DO
                 });      
             }
             else
