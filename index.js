@@ -67,21 +67,27 @@ function startConsumerGroups(){
 
     async.each(topics, function (topic) {
 
-        var consumerGroup = new ConsumerGroup(Object.assign({id: landscapeName + '_' + tenantName + '_' + topic}, consumerOptions), topic);
+        var consumerGroup = new ConsumerGroup(Object.assign({
+            id: landscapeName + '_' + tenantName + '_' + topic
+        }, consumerOptions), topic);
+
         consumerGroup.on('error', onError);
         consumerGroup.on('message', onMessage);
     });
 }
 
-function onError (error) {
+// log error
+function onError(error) {
     console.error(error);
-    console.error(error.stack);
 }
 
-function onMessage (message) {
-    console.log(this.client.clientId, message);
+// process message
+function onMessage(message) {
+    console.log("Message from '" + this.client.clientId + "' topic: '" + message.topic + "'  offset: " + message.offset);
+    console.log(message);
 }
 
+// close all consumer groups on exit
 process.once('SIGINT', function () {
   async.each(consumerGroups, function (consumer, callback) {
     consumer.close(true, callback);
