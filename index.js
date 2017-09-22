@@ -19,7 +19,7 @@ var client = zookeeper.createClient(zookeeperHost + ':' + zookeeperPort);
 
 client.once('connected', function () {
     
-    console.log('Connected to Zookeeper ' + zookeeperHost + ':' + zookeeperPort);
+    console.log('Connected to Zookeeper : ' + zookeeperHost + ':' + zookeeperPort);
 
     //get all topics
     client.getChildren("/brokers/topics", (err, children, stats) => {
@@ -29,12 +29,14 @@ client.once('connected', function () {
         children.forEach(child => checkLoadedTopic(child));
 
         client.close();
+
+        startConsumerGroups();
     });
 });
 
 client.connect();
 
-// kafka topics consume
+// kafka topics consume with consumer groups
 
 var consumerOptions = {
     host: zookeeperHost + ':' + zookeeperPort,
@@ -56,8 +58,6 @@ function checkLoadedTopic(topic){
         console.log("Topic needs to be monitored : ", topic);
         topics.push(topic);
     }
-
-    startConsumerGroups();
 }
 
 // start consumer groups for all topics
