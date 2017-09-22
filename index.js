@@ -11,7 +11,6 @@ const landscapeName = process.env.LANDSCAPE_NAME;
 const tenantName = process.env.TENANT_NAME;
 const zookeeperHost = process.env.ZOOKEEPER_HOST;
 const zookeeperPort = process.env.ZOOKEEPER_PORT;
-console.log("ENV : ", landscapeName, tenantName, zookeeperHost, zookeeperPort);
 
 // connect client
 var zookeeper = require('node-zookeeper-client');
@@ -84,7 +83,9 @@ function onError(error) {
 // process message
 function onMessage(message) {
     console.log("Message from '" + this.client.clientId + "' topic: '" + message.topic + "'  offset: " + message.offset);
-    console.log(message);
+    
+    var msg = JSON.parse(message.value);
+    console.log('Message : ', msg);
 }
 
 // close all consumer groups on exit
