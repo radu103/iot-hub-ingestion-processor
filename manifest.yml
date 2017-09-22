@@ -1,5 +1,5 @@
 applications:
- - name: iot-hub-ingestion-processor-shared
+ - name: iot-hub-ingestion-processor-shared-new
    memory: 64M
    disk_quota: 128M
    instances: 2

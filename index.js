@@ -1,17 +1,18 @@
-var async = require('async');
-var kafkaNode = require('kafka-node');
-var ConsumerGroup = require('kafka-node').ConsumerGroup;
+const dotenv = require('dotenv');
+
+
+const async = require('async');
+const kafkaNode = require('kafka-node');
+const ConsumerGroup = require('kafka-node').ConsumerGroup;
 
 // get ENV vars from CF
-
-var landscapeName = process.env.landscapeName;
-var tenantName = process.env.tenantName;
-var zookeeperHost = process.env.zookeeperHost;
-var zookeeperPort = process.env.zookeeperPort;
+const landscapeName = process.env.LANDSCAPE_NAME;
+const tenantName = process.env.TENANT_NAME;
+const zookeeperHost = process.env.ZOOKEEPER_HOST;
+const zookeeperPort = process.env.ZOOKEEPER_PORT;
 console.log("ENV : ", landscapeName, tenantName, zookeeperHost, zookeeperPort);
 
-// read zookeeper topics
-
+// connect client
 var zookeeper = require('node-zookeeper-client');
 var client = zookeeper.createClient(zookeeperHost + ':' + zookeeperPort);
 
@@ -24,7 +25,7 @@ client.once('connected', function () {
         
         console.log("Kafka Topics : ", children);
 
-        children.forEach(child => topicsLoaded(child));
+        children.forEach(child => checkLoadedTopic(child));
 
         client.close();
     });
@@ -45,18 +46,23 @@ var consumerOptions = {
 var topics = [];
 var consumerGroups = [];
 
-function topicsLoaded(topic){
+// checks loaded topic if needed to be read
+function checkLoadedTopic(topic){
 
-    if(topic.indexOf('test') >= 0)
+    var topicPre = process.env.KAFKA_TOPIC_PREFIX + landscapeName + "-" + tenantName;
+    if(topic.indexOf(topicPre) >= 0)
     {
-        console.log("Topic loaded : ", topic);
+        console.log("Topic needs to be monitored : ", topic);
         topics.push(topic);
     }
 
     startConsumerGroups();
 }
 
+// start consumer groups for all topics
 function startConsumerGroups(){
+
+    console.log("All monitored topics : ", topics);
 
     async.each(topics, function (topic) {
 
