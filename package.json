@@ -21,10 +21,13 @@
   "license": "ISC",
   "dependencies": {
     "async": "^2.5.0",
+    "cfenv": "^1.0.4",
     "chai": "^4.1.1",
     "dotenv": "^4.0.0",
     "kafka-node": "^2.2.2",
     "mocha": "^3.5.0",
+    "mongodb": "^2.2.31",
+    "mongodb-uri": "^0.9.7",
     "node-zookeeper-client": "^0.2.2"
   }
 }
