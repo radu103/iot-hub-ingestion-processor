@@ -152,7 +152,7 @@ function onMessage(message) {
                     'group_id' : group_id,
                     'device_id' : msg.device_id,
                     'values' : msg.values,
-                    'recorded_time' : msg.receive_time,
+                    'recorded_time' : Date.parse(msg.receive_time),
                     'created_at' : new Date()
                 };
         
