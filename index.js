@@ -121,11 +121,14 @@ function onMessage(message) {
     // connect to mongo and put raw data there
     mongoClient.connect(mongoUrl, function(err, db){
 
-        var dId = new ObjectId.createFromHexString(msg.device_id);
+        var dId = new ObjectId(msg.device_id);
 
-        var deviceCol = db.collection(tenantName + "_device");      
+        var deviceColName = tenantName + "_device";
+        console.log('deviceColName : ', deviceColName);
 
-        deviceCol.findOne({ _id : dId }, function(device){
+        var deviceCol = db.collection(deviceColName);     
+
+        deviceCol.findOne({ _id : dId }, function(err, device){
 
             if(device !== undefined && device !== null){
 
@@ -134,6 +137,7 @@ function onMessage(message) {
                 var project_id = null;
                 var group_id = null;
 
+                // get project_id and group_id if specified on device
                 if(device.project_id !== undefined && device.project_id !== null){
                     project_id = device.project_id;
                 }
@@ -142,6 +146,7 @@ function onMessage(message) {
                     group_id = device.group_id;
                 }
 
+                // compose raw data
                 var rawData = {
                     'project_id' : project_id,
                     'group_id' : group_id,
@@ -155,9 +160,7 @@ function onMessage(message) {
                 var rawDataCol = db.collection(tenantName + "_raw_data");
                 
                 // Insert some documents 
-                rawDataCol.insertOne([
-                    rawData
-                ], function(err, result) {
+                rawDataCol.insertOne(rawData, function(err, result) {
         
                     if(err){
                         console.log('Mongo err : ', err);
