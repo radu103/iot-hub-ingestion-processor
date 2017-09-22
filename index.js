@@ -1,6 +1,7 @@
-const dotenv = require('dotenv');
+// load env vars from CF
+require('dotenv').config();
 
-
+// required modules
 const async = require('async');
 const kafkaNode = require('kafka-node');
 const ConsumerGroup = require('kafka-node').ConsumerGroup;
