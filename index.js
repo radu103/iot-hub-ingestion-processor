@@ -5,8 +5,9 @@ require('dotenv').config();
 const cfenv = require('cfenv');
 const async = require('async');
 const kafkaNode = require('kafka-node');
-const ConsumerGroup = require('kafka-node').ConsumerGroup;
-const mongoClient = require('mongodb').MongoClient;
+var ConsumerGroup = require('kafka-node').ConsumerGroup;
+var mongoClient = require('mongodb').MongoClient;
+var ObjectId = require('mongodb').ObjectID;
 
 // get ENV vars from CF
 const landscapeName = process.env.LANDSCAPE_NAME;
@@ -120,21 +121,33 @@ function onMessage(message) {
     // connect to mongo and put raw data there
     mongoClient.connect(mongoUrl, function(err, db){
 
-        var deviceCol = db.collection(tenantName + "_device");        
-        deviceCol.findOne({_id : msg.device_id}, function(device){
+        var dId = new ObjectId.createFromHexString(msg.device_id);
+
+        var deviceCol = db.collection(tenantName + "_device");      
+
+        deviceCol.findOne({ _id : dId }, function(device){
 
             if(device !== undefined && device !== null){
-                console.log('device found : ', device);
+
+                console.log('Device found : ', device);
 
                 var project_id = null;
                 var group_id = null;
+
+                if(device.project_id !== undefined && device.project_id !== null){
+                    project_id = device.project_id;
+                }
+
+                if(device.group_id !== undefined && device.group_id !== null){
+                    group_id = device.group_id;
+                }
 
                 var rawData = {
                     'project_id' : project_id,
                     'group_id' : group_id,
                     'device_id' : msg.device_id,
                     'values' : msg.values,
-                    'recorded_time' : new Date(),
+                    'recorded_time' : msg.receive_time,
                     'created_at' : new Date()
                 };
         
@@ -147,7 +160,7 @@ function onMessage(message) {
                 ], function(err, result) {
         
                     if(err){
-                        console.log('mongo err : ', err);
+                        console.log('Mongo err : ', err);
                     }
         
                     console.log(result);
@@ -157,7 +170,7 @@ function onMessage(message) {
             }
             else
             {
-                console.log('device not found : ', msg.device_id);
+                console.log('Device not found : ', msg.device_id, dId);
                 db.close();
             }  
         });
