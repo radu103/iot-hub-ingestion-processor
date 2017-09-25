@@ -99,8 +99,64 @@ function onError(error) {
     console.error(error);
 }
 
+
+// rawdata insert callback
+var fnRawDataInsert = function(error, response, body, msg, deviceId){
+    
+    console.log('Rawdata insert response');
+    console.log(body);
+
+    var body = JSON.parse(body);
+    console.log(body);
+}
+
+// location insert callback
+var fnLocationInsert = function(error, response, body){
+
+    var found_lat = false;
+    var found_long = false;
+
+    for(var i = 0; i < msg.values.length; i++){
+        
+        if(msg.values[i]['latitude'] !== undefined){
+            found_lat = parseFloat(msg.values[i]['latitude']);
+        }
+
+        if(msg.values[i]['longitude'] !== undefined){
+            found_long = parseFloat(msg.values[i]['longitude']);
+        }        
+    }
+
+    if(found_lat !== 0 && found_long !== 0){
+
+        console.log("Message has location data !")
+
+        // post request to create location record
+        var locationUrl = locationService.credentials.url + "/location";
+        var locationUsername = locationService.credentials.user;
+        var locationPassword = locationService.credentials.password;
+        var locationAuth = "Basic " + new Buffer(locationUsername + ":" + locationPassword).toString("base64");
+
+    }
+}
+
+// process update device as
+var fnUpdateDevice = function(error, response, body){
+
+    // update device metadata (last_contact)
+    var metadataUrl = metadataService.credentials.url + "/device('" + deviceId + "')";
+    var metadataUsername = metadataService.credentials.user;
+    var metadataPassword = metadataService.credentials.password;
+    var metadataAuth = "Basic " + new Buffer(metadataUsername + ":" + metadataPassword).toString("base64");
+}
+
+// process device event rules callback
+var fnProcessDeviceEventRules = function(error, response, body, msg, deviceId){
+;
+}
+
 // device found request callback
-var fnGetDeviceCallback = function(error, response, body, msg) {
+var fnGetDevice = function(error, response, body, msg) {
 
     console.log('Get device from metadata response');
 
@@ -159,31 +215,14 @@ var fnGetDeviceCallback = function(error, response, body, msg) {
                 }
             },
             function(error, response, body){
-                fnRawDataInsertCallback(error, response, body, msg, device["_id"]);
+                fnRawDataInsert(error, response, body, msg, device["_id"]);
+                fnLocationInsert(error, response, body, msg, device["_id"]);
+                fnUpdateDevice(error, response, body, msg, device["_id"]);
+                fnProcessDeviceEventRules(error, response, body, msg, device["_id"]);
             }
         );
 
     }
-}
-
-// rawdata insert callback
-var fnRawDataInsertCallback = function(error, response, body, msg, deviceId){
-
-    console.log('Rawdata insert response');
-    console.log(body);
-    
-    var body = JSON.parse(body);
-    console.log(body);
-}
-
-// location insert callback
-var fnLocationInsertCallback = function(error, response, body){
-;
-}
-
-// process device event rules callback
-var fnProcessDeviceEventRulesCallback = function(error, response, body){
-;
 }
 
 // process message
@@ -209,7 +248,7 @@ function onMessage(message) {
             }
         },
         function(error, response, body){
-            fnGetDeviceCallback(error, response, body, msg);
+            fnGetDevice(error, response, body, msg);
         }
     );
 }
