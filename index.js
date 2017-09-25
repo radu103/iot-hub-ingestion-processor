@@ -108,7 +108,7 @@ var fnRawDataInsert = function(error, response, body, msg, deviceId){
 }
 
 // location insert callback
-var fnLocationInsert = function(error, response, body){
+var fnLocationInsert = function(error, response, body, msg, deviceId){
 
     var found_lat = false;
     var found_long = false;
