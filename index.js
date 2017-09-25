@@ -105,9 +105,6 @@ var fnRawDataInsert = function(error, response, body, msg, deviceId){
     
     console.log('Rawdata insert response');
     console.log(body);
-
-    var body = JSON.parse(body);
-    console.log(body);
 }
 
 // location insert callback
