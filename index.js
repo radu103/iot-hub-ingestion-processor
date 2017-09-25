@@ -6,8 +6,7 @@ const cfenv = require('cfenv');
 const async = require('async');
 const kafkaNode = require('kafka-node');
 var ConsumerGroup = require('kafka-node').ConsumerGroup;
-var mongoClient = require('mongodb').MongoClient;
-var ObjectId = require('mongodb').ObjectID;
+var request = require('request');
 
 // get ENV vars from CF
 const landscapeName = process.env.LANDSCAPE_NAME;
@@ -18,30 +17,19 @@ const zookeeperPort = process.env.ZOOKEEPER_PORT;
 // mongo create url
 // configs from env vars
 var appEnv = cfenv.getAppEnv();
-//console.log(appEnv.getServices());
+console.log(appEnv.getServices());
 
-var mongoServiceName = "iot_hub_mongo_" + landscapeName;
-var mongoService = appEnv.getService(mongoServiceName);
-var mongoCredentials = appEnv.getServiceCreds(mongoServiceName);
-var mongoUrl = mongoCredentials.uri;
+var metadataService = appEnv.getService('iot-hub-service-odata-shared-new-metadata');
+console.log("metadataService", metadataService);
 
-console.log(mongoServiceName + " found in VCAP_SERVICES");
-console.log(mongoService.credentials);
+var rawdataService = appEnv.getService('iot-hub-service-odata-shared-new-rawdata');
+console.log("rawdataService", rawdataService);
 
-var mongoDbName = '';
-var mongoUrl = '';
+var locationService = appEnv.getService('iot-hub-service-odata-shared-new-location');
+console.log("locationService", locationService);
 
-if(mongoService !== undefined){
-
-    mongoUrl = mongoService.credentials.uri + "?ssl=false";
-
-    var mongodbUri = require('mongodb-uri');
-    var uriObject = mongodbUri.parse(mongoUrl);
-    mongoDbName = uriObject.database;
-}
-
-console.log("Mongo url : ", mongoUrl);
-console.log("Mongo db : ", mongoDbName);
+var eventService = appEnv.getService('iot-hub-service-odata-shared-new-event');
+console.log("eventService", eventService);
 
 // zookeeper connect client
 var zookeeper = require('node-zookeeper-client');
@@ -111,6 +99,93 @@ function onError(error) {
     console.error(error);
 }
 
+// device found request callback
+var fnGetDeviceCallback = function(error, response, body, msg) {
+
+    console.log('Get device from metadata response');
+
+    var body = JSON.parse(body);
+    console.log(body);
+    
+    if(error){
+        console.log("Metadata service : ", error);
+    }
+    
+    if(body.value === undefined || body.value[0] === undefined){
+        console.log("Device not found !");
+    }
+
+    var device = body.value[0];
+    if(device["_id"].length > 0){
+
+        console.log("Device info : ", device); 
+
+        var project_id = null;
+        var group_id = null;
+
+        // get project_id and group_id if specified on device
+        if(device.project_id !== undefined && device.project_id !== null){
+            project_id = device.project_id;
+        }
+
+        if(device.group_id !== undefined && device.group_id !== null){
+            group_id = device.group_id;
+        }
+
+        // compose raw data
+        var rawData = {
+            'project_id' : project_id,
+            'group_id' : group_id,
+            'device_id' : device["_id"],
+            'values' : msg.values,
+            'recorded_time' : new Date(msg.receive_time),
+            'created_at' : new Date()
+        };
+
+        // post request to create rawdata record
+        var rawdataUrl = rawdataService.credentials.url + "/raw_data";
+        var rawdataUsername = rawdataService.credentials.user;
+        var rawdataPassword = rawdataService.credentials.password;
+        var rawdataAuth = "Basic " + new Buffer(rawdataUsername + ":" + rawdataPassword).toString("base64");
+
+        request(
+            {
+                url : rawdataUrl,
+                method: 'POST',
+                json: rawData,     
+                headers : {
+                    "Authorization" : rawdataAuth,
+                    "Accept": "application/json"
+                }
+            },
+            function(error, response, body){
+                fnRawDataInsertCallback(error, response, body, msg, device["_id"]);
+            }
+        );
+
+    }
+}
+
+// rawdata insert callback
+var fnRawDataInsertCallback = function(error, response, body, msg, deviceId){
+
+    console.log('Rawdata insert response');
+    console.log(body);
+    
+    var body = JSON.parse(body);
+    console.log(body);
+}
+
+// location insert callback
+var fnLocationInsertCallback = function(error, response, body){
+;
+}
+
+// process device event rules callback
+var fnProcessDeviceEventRulesCallback = function(error, response, body){
+;
+}
+
 // process message
 function onMessage(message) {
     console.log("Message from '" + this.client.clientId + "' topic: '" + message.topic + "'  offset: " + message.offset);
@@ -118,76 +193,25 @@ function onMessage(message) {
     var msg = JSON.parse(message.value);
     console.log('Message : ', msg);
 
-    // connect to mongo and put raw data there
-    mongoClient.connect(mongoUrl, function(err, db){
+    var deviceId = msg.device_id;
 
-        var dId = new ObjectId(msg.device_id);
+    //get device metadata
+    var metadataUrl = metadataService.credentials.url + "/device('" + deviceId + "')";
+    var metadataUsername = metadataService.credentials.user;
+    var metadataPassword = metadataService.credentials.password;
+    var metadataAuth = "Basic " + new Buffer(metadataUsername + ":" + metadataPassword).toString("base64");
 
-        var deviceColName = tenantName + "_device";
-        //console.log('deviceColName : ', deviceColName);
-
-        var deviceCol = db.collection(deviceColName);     
-
-        deviceCol.findOne({ _id : dId }, function(err, device){
-
-            if(device !== undefined && device !== null){
-
-                console.log('Device found : ', device);
-
-                var project_id = null;
-                var group_id = null;
-
-                // get project_id and group_id if specified on device
-                if(device.project_id !== undefined && device.project_id !== null){
-                    project_id = device.project_id;
-                }
-
-                if(device.group_id !== undefined && device.group_id !== null){
-                    group_id = device.group_id;
-                }
-
-                // compose raw data
-                var rawData = {
-                    'project_id' : project_id,
-                    'group_id' : group_id,
-                    'device_id' : msg.device_id,
-                    'values' : msg.values,
-                    'recorded_time' : new Date(msg.receive_time),
-                    'created_at' : new Date()
-                };
-        
-                // Get the raw data collection collection 
-                var rawDataCol = db.collection(tenantName + "_raw_data");
-                
-                // Insert raw data record
-                rawDataCol.insertOne(rawData, function(err, raw_data) {
-                    
-                    //console.log(raw_data);
-
-                    if(err){
-                        console.log('Mongo err : ', err);
-                    }
-        
-                    db.close();
-
-                    // process and insert location from raw_data if latitude & longitude are present
-                    // TO DO
-
-                    // process and generate events & validate schema if specified
-                    // TO DO
-
-                    // process and transfer to cold store
-                    // TO DO
-                });      
+    request(
+        {
+            url : metadataUrl,
+            headers : {
+                "Authorization" : metadataAuth
             }
-            else
-            {
-                console.log('Device not found : ', msg.device_id, dId);
-                db.close();
-            }  
-        });
-
-    });
+        },
+        function(error, response, body){
+            fnGetDeviceCallback(error, response, body, msg);
+        }
+    );
 }
 
 // close all consumer groups on exit
