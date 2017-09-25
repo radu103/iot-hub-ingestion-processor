@@ -138,7 +138,7 @@ var fnLocationInsert = function(error, response, body, msg, deviceId){
 }
 
 // process update device as
-var fnUpdateDevice = function(error, response, body){
+var fnUpdateDevice = function(error, response, body, msg, deviceId){
 
     // update device metadata (last_contact)
     var metadataUrl = metadataService.credentials.url + "/device('" + deviceId + "')";
