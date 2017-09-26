@@ -101,7 +101,7 @@ function onError(error) {
 
 
 // rawdata insert callback
-var fnRawDataInsert = function(error, response, body, msg, deviceId){
+var fnRawDataInsertCallback = function(error, response, body, msg, deviceId){
     
     console.log('Rawdata insert response');
     console.log(body);
@@ -153,73 +153,55 @@ var fnProcessDeviceEventRules = function(error, response, body, msg, deviceId){
 }
 
 // device found request callback
-var fnGetDevice = function(error, response, body, msg) {
+var fnInsertRawDataAfterGetDevice = function(error, response, body, msg) {
 
-    console.log('Get device from metadata response');
+    console.log("Device info : ", device); 
 
-    var body = JSON.parse(body);
-    console.log(body);
-    
-    if(error){
-        console.log("Metadata service : ", error);
-    }
-    
-    if(body.value === undefined || body.value[0] === undefined){
-        console.log("Device not found !");
+    var project_id = null;
+    var group_id = null;
+
+    // get project_id and group_id if specified on device
+    if(device.project_id !== undefined && device.project_id !== null){
+        project_id = device.project_id;
     }
 
-    var device = body.value[0];
-    if(device["_id"].length > 0){
+    if(device.group_id !== undefined && device.group_id !== null){
+        group_id = device.group_id;
+    }
 
-        console.log("Device info : ", device); 
+    // compose raw data
+    var rawData = {
+        'project_id' : project_id,
+        'group_id' : group_id,
+        'device_id' : device["_id"],
+        'values' : msg.values,
+        'recorded_time' : new Date(msg.receive_time),
+        'created_at' : new Date()
+    };
 
-        var project_id = null;
-        var group_id = null;
+    // post request to create rawdata record
+    var rawdataUrl = rawdataService.credentials.url + "/raw_data";
+    var rawdataUsername = rawdataService.credentials.user;
+    var rawdataPassword = rawdataService.credentials.password;
+    var rawdataAuth = "Basic " + new Buffer(rawdataUsername + ":" + rawdataPassword).toString("base64");
 
-        // get project_id and group_id if specified on device
-        if(device.project_id !== undefined && device.project_id !== null){
-            project_id = device.project_id;
-        }
-
-        if(device.group_id !== undefined && device.group_id !== null){
-            group_id = device.group_id;
-        }
-
-        // compose raw data
-        var rawData = {
-            'project_id' : project_id,
-            'group_id' : group_id,
-            'device_id' : device["_id"],
-            'values' : msg.values,
-            'recorded_time' : new Date(msg.receive_time),
-            'created_at' : new Date()
-        };
-
-        // post request to create rawdata record
-        var rawdataUrl = rawdataService.credentials.url + "/raw_data";
-        var rawdataUsername = rawdataService.credentials.user;
-        var rawdataPassword = rawdataService.credentials.password;
-        var rawdataAuth = "Basic " + new Buffer(rawdataUsername + ":" + rawdataPassword).toString("base64");
-
-        request(
-            {
-                url : rawdataUrl,
-                method: 'POST',
-                json: rawData,     
-                headers : {
-                    "Authorization" : rawdataAuth,
-                    "Accept": "application/json"
-                }
-            },
-            function(error, response, body){
-                fnRawDataInsert(error, response, body, msg, device["_id"]);
-                fnLocationInsert(error, response, body, msg, device["_id"]);
-                fnUpdateDevice(error, response, body, msg, device["_id"]);
-                fnProcessDeviceEventRules(error, response, body, msg, device["_id"]);
+    request(
+        {
+            url : rawdataUrl,
+            method: 'POST',
+            json: rawData,     
+            headers : {
+                "Authorization" : rawdataAuth,
+                "Accept": "application/json"
             }
-        );
-
-    }
+        },
+        function(error, response, body){
+            fnRawDataInsertCallback(error, response, body, msg, device["_id"]);
+            fnLocationInsert(error, response, body, msg, device["_id"]);
+            fnUpdateDevice(error, response, body, msg, device["_id"]);
+            fnProcessDeviceEventRules(error, response, body, msg, device["_id"]);
+        }
+    );
 }
 
 // process message
@@ -245,7 +227,24 @@ function onMessage(message) {
             }
         },
         function(error, response, body){
-            fnGetDevice(error, response, body, msg);
+            
+            console.log('Get device from metadata response');
+            
+            var body = JSON.parse(body);
+            console.log(body);
+            
+            if(error){
+                console.log("Metadata service : ", error);
+            }
+            
+            if(body.value === undefined || body.value[0] === undefined){
+                console.log("Device not found !");
+            }
+        
+            var device = body.value[0];
+            if(device["_id"].length > 0){
+                fnInsertRawDataAfterGetDevice(error, response, body, msg);
+            }
         }
     );
 }
