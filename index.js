@@ -108,6 +108,12 @@ var fnRawDataInsertCallback = function(error, response, body, msg, deviceId){
 }
 
 // location insert callback
+var fnLocationInsertCallback = function(error, response, body, deviceId){
+    console.log('Location insert response for device : ', deviceId);
+    console.log(body);
+}
+
+// location insert
 var fnLocationInsert = function(error, response, body, msg, deviceId, groupId, projectId){
 
     var found_lat = false;
@@ -167,6 +173,21 @@ var fnLocationInsert = function(error, response, body, msg, deviceId, groupId, p
             }    
         }
         
+        //post location to server
+        request(
+            {
+                url : locationUrl,
+                method: 'POST',
+                json: newLocation,     
+                headers : {
+                    "Authorization" : locationAuth,
+                    "Accept": "application/json"
+                }
+            },
+            function(error, response, body){
+                fnLocationInsertCallback(error, response, body, device["_id"]);
+            }
+        );        
     }
 }
 
