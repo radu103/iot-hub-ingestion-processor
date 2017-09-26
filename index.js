@@ -134,6 +134,39 @@ var fnLocationInsert = function(error, response, body, msg, deviceId){
         var locationPassword = locationService.credentials.password;
         var locationAuth = "Basic " + new Buffer(locationUsername + ":" + locationPassword).toString("base64");
 
+        var newLocation = {
+            "device_id" : deviceId,
+            "project_id" : project_id,
+            "group_id" : group_id,
+            "latitude" : found_lat,
+            "longitude" : found_long,
+            "accuracy" : 99999,
+            "elevation" : '',
+            "speed" : 0,
+            "heading" : '',
+            "recorded_time" : new Date(),
+            "created_at" : new Date()
+        };
+        
+        for(var i = 0; i < msg.values.length; i++){
+        
+            if(msg.values[i]['elevation'] !== undefined){
+                newLocation.elevation = parseInt(msg.values[i]['elevation']);
+            }
+
+            if(msg.values[i]['speed'] !== undefined){
+                newLocation.speed = parseFloat(msg.values[i]['speed']);
+            }  
+            
+            if(msg.values[i]['accuracy'] !== undefined){
+                newLocation.accuracy = parseInt(msg.values[i]['accuracy']);
+            }   
+            
+            if(msg.values[i]['heading'] !== undefined){
+                newLocation.heading = msg.values[i]['heading'];
+            }    
+        }
+        
     }
 }
 
