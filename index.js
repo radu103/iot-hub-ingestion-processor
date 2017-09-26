@@ -108,7 +108,7 @@ var fnRawDataInsertCallback = function(error, response, body, msg, deviceId){
 }
 
 // location insert callback
-var fnLocationInsert = function(error, response, body, msg, deviceId){
+var fnLocationInsert = function(error, response, body, msg, deviceId, groupId, projectId){
 
     var found_lat = false;
     var found_long = false;
@@ -133,11 +133,11 @@ var fnLocationInsert = function(error, response, body, msg, deviceId){
         var locationUsername = locationService.credentials.user;
         var locationPassword = locationService.credentials.password;
         var locationAuth = "Basic " + new Buffer(locationUsername + ":" + locationPassword).toString("base64");
-
+        
         var newLocation = {
             "device_id" : deviceId,
-            "project_id" : project_id,
-            "group_id" : group_id,
+            "project_id" : projectId,
+            "group_id" : groupId,
             "latitude" : found_lat,
             "longitude" : found_long,
             "accuracy" : 99999,
@@ -230,7 +230,7 @@ var fnInsertRawDataAfterGetDevice = function(error, response, body, msg) {
         },
         function(error, response, body){
             fnRawDataInsertCallback(error, response, body, msg, device["_id"]);
-            fnLocationInsert(error, response, body, msg, device["_id"]);
+            fnLocationInsert(error, response, body, msg, device["_id"], group_id, project_id);
             fnUpdateDevice(error, response, body, msg, device["_id"]);
             fnProcessDeviceEventRules(error, response, body, msg, device["_id"]);
         }
