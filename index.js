@@ -204,7 +204,7 @@ var fnUpdateDevice = function(error, response, body, msg, deviceId){
 }
 
 // device found request callback
-var fnInsertRawDataAfterGetDevice = function(error, response, body, msg) {
+var fnInsertRawDataAfterGetDevice = function(error, response, body, msg, device) {
 
     console.log("Device info : ", device); 
 
@@ -293,7 +293,7 @@ function onMessage(message) {
         
             var device = body.value[0];
             if(device["_id"].length > 0){
-                fnInsertRawDataAfterGetDevice(error, response, body, msg);
+                fnInsertRawDataAfterGetDevice(error, response, body, msg, device);
             }
         }
     );
