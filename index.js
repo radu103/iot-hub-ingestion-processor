@@ -71,9 +71,11 @@ var consumerGroups = [];
 function checkLoadedTopic(topic){
 
     var topicPre = process.env.KAFKA_TOPIC_PREFIX + landscapeName + "-" + tenantName;
-    if(topic.indexOf(topicPre) >= 0)
+    var topicEnd = "-raw-data";
+
+    if(topic.indexOf(topicPre) >= 0 && topic.indexOf(topicEnd) >= 0)
     {
-        console.log("Topic needs to be monitored : ", topic);
+        console.log("Topic needs to be monitored for raw data ingestion : ", topic);
         topics.push(topic);
     }
 }
@@ -86,7 +88,7 @@ function startConsumerGroups(){
     async.each(topics, function (topic) {
 
         var consumerGroup = new ConsumerGroup(Object.assign({
-            id: landscapeName + '_' + tenantName + '_' + topic
+            id: 'ingestion_' + landscapeName + '_' + tenantName + '_' + topic
         }, consumerOptions), topic);
 
         consumerGroup.on('error', onError);
@@ -201,11 +203,6 @@ var fnUpdateDevice = function(error, response, body, msg, deviceId){
     var metadataAuth = "Basic " + new Buffer(metadataUsername + ":" + metadataPassword).toString("base64");
 }
 
-// process device event rules callback
-var fnProcessDeviceEventRules = function(error, response, body, msg, deviceId){
-;
-}
-
 // device found request callback
 var fnInsertRawDataAfterGetDevice = function(error, response, body, msg) {
 
@@ -253,7 +250,6 @@ var fnInsertRawDataAfterGetDevice = function(error, response, body, msg) {
             fnRawDataInsertCallback(error, response, body, msg, device["_id"]);
             fnLocationInsert(error, response, body, msg, device["_id"], group_id, project_id);
             fnUpdateDevice(error, response, body, msg, device["_id"]);
-            fnProcessDeviceEventRules(error, response, body, msg, device["_id"]);
         }
     );
 }

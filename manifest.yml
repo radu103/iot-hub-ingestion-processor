@@ -11,5 +11,4 @@ applications:
    services:
     - iot-hub-service-odata-shared-new-metadata
     - iot-hub-service-odata-shared-new-rawdata   
-    - iot-hub-service-odata-shared-new-location   
-    - iot-hub-service-odata-shared-new-event
+    - iot-hub-service-odata-shared-new-location
