@@ -8,7 +8,6 @@ applications:
    instances: 1
    buildpack: https://github.com/cloudfoundry/nodejs-buildpack
    services:
-   services:
     - iot-hub-service-odata-shared-new-metadata
     - iot-hub-service-odata-shared-new-rawdata   
     - iot-hub-service-odata-shared-new-location
